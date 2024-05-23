@@ -1,0 +1,3 @@
+﻿<Project>
+  <Import Project="../build/docker-dotnet-three-js.props" />
+</Project>

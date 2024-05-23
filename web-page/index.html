@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Upload</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+        }
+        input, textarea, button {
+            display: block;
+            width: 100%;
+            margin-bottom: 10px;
+            padding: 10px;
+            font-size: 16px;
+        }
+        button {
+            cursor: pointer;
+        }
+        .file-list {
+            margin-top: 20px;
+        }
+        .file-item {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        #canvas-container {
+            width: 100%;
+            height: 500px;
+            max-width: 800px; 
+            max-height: 500px; 
+            margin: 0 auto; 
+            overflow: hidden; 
+        }
+        .modal {
+            display: none; 
+            position: fixed;
+            z-index: 1; 
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto; 
+            background-color: rgba(0,0,0,0.4); 
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto; 
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%; 
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>File Upload</h1>
+        <input type="file" id="fileInput">
+        <textarea id="descriptionInput" placeholder="Enter file description"></textarea>
+        <button onclick="uploadFile()">Upload</button>
+        
+        <h2>Uploaded Files</h2>
+        <div class="file-list" id="fileList"></div>
+    </div>
+
+    <div id="myModal" class="modal">
+        <div class="modal-content">
+          <span class="close" onclick="closeModal()">&times;</span>
+          <div id="canvas-container"></div>
+        </div>
+    </div>
+      
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        const apiUrl = 'http://localhost:5249/api/FileElements'; 
+        let currentFileId;
+
+        async function uploadFile() {
+            const fileInput = document.getElementById('fileInput');
+            const descriptionInput = document.getElementById('descriptionInput');
+            const file = fileInput.files[0];
+            const description = descriptionInput.value;
+
+            if (!file || !description) {
+                alert('Please select a file and enter a description');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('description', description);
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to upload file');
+                }
+
+                alert('File uploaded successfully');
+                fetchFiles();
+            } catch (error) {
+                alert(error.message);
+            }
+        }
+
+        async function fetchFiles() {
+            try {
+                const response = await fetch(apiUrl);
+                
+                if (!response.ok) {
+                    throw new Error('Failed to fetch files');
+                }
+
+                const files = await response.json();
+                displayFiles(files);
+            } catch (error) {
+                alert(error.message);
+            }
+        }
+
+        function displayFiles(files) {
+            const fileList = document.getElementById('fileList');
+            fileList.innerHTML = '';
+
+            files.forEach(file => {
+                const fileItem = document.createElement('div');
+                fileItem.className = 'file-item';
+                fileItem.innerHTML = `
+                    <p><strong>ID:</strong> ${file.id}</p>
+                    <p><strong>File Path:</strong> <a href="${file.file_path}" target="_blank">${file.file_path}</a></p>
+                    <p><strong>Description:</strong> ${file.description}</p>
+                    <button onclick="deleteFile(${file.id})">Delete</button>
+                    <button onclick="openModal(${file.id}, '${file.description}')">Edit</button>
+                    <button onclick="viewModel('${file.id}')">View 3D Model</button>
+                `;
+                fileList.appendChild(fileItem);
+            });
+        }
+
+        async function deleteFile(id) {
+            try {
+                const response = await fetch(`${apiUrl}/${id}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to delete file');
+                }
+
+                alert('File deleted successfully');
+                fetchFiles();
+            } catch (error) {
+                alert(error.message);
+            }
+        }
+
+        function openModal(id, currentDescription) {
+            currentFileId = id;
+            const modal = document.getElementById('myModal');
+            modal.style.display = 'block';
+
+            const editFileInput = document.getElementById('editFileInput');
+            const editDescriptionInput = document.getElementById('editDescriptionInput');
+            editFileInput.value = '';
+            editDescriptionInput.value = currentDescription;
+        }
+
+        async function saveChanges() {
+            const editFileInput = document.getElementById('editFileInput');
+            const editDescriptionInput = document.getElementById('editDescriptionInput');
+            const file = editFileInput.files[0];
+            const description = editDescriptionInput.value;
+
+            const formData = new FormData();
+            if (file) {
+                formData.append('file', file);
+            }
+            formData.append('description', description);
+
+            try {
+                const response = await fetch(`${apiUrl}/${currentFileId}`, {
+                    method: 'PUT',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to edit file');
+                }
+
+                alert('File edited successfully');
+                closeModal();
+                fetchFiles();
+            } catch (error) {
+                alert(error.message);
+            }
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('editModal');
+            modal.style.display = 'none';
+        }
+
+        async function viewModel(id) {
+            try {
+                const response = await fetch(`${apiUrl}/download/${id}`);
+                if (!response.ok) {
+                    throw new Error('Failed to load 3D model');
+                }
+                
+                const blob = await response.blob();
+                const objectURL = URL.createObjectURL(blob);
+                
+                const scene = new THREE.Scene();
+                const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+                const renderer = new THREE.WebGLRenderer();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                const modalContainer = document.getElementById('canvas-container');
+                modalContainer.innerHTML = '';
+                modalContainer.appendChild(renderer.domElement);
+                const controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+                const loader = new THREE.GLTFLoader();
+                loader.load(
+                    objectURL,
+                    function(gltf) {
+                        const model = gltf.scene;
+                        console.log(model);
+                        model.position.set(-1.5, 0, 0);
+                        scene.add(model);
+                        controls.update();
+                    },
+                    undefined,
+                    function(error) {
+                        console.error('An error happened', error);
+                    }
+                );
+
+                const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+                scene.add(ambientLight);
+                const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+                scene.add(directionalLight);
+
+                camera.position.z = 5;
+
+                const modal = document.getElementById('myModal');
+                modal.style.display = 'block';
+
+                const animate = function () {
+                    requestAnimationFrame(animate);
+                    renderer.render(scene, camera);
+                };
+                animate();
+            } catch (error) {
+                alert(error.message);
+            }
+        }
+
+        function openModal() {
+            var modal = document.getElementById('myModal');
+            modal.style.display = 'block';
+        }
+
+        function closeModal() {
+            var modal = document.getElementById('myModal');
+            modal.style.display = 'none';
+        }
+
+        document.addEventListener('DOMContentLoaded', fetchFiles);
+    </script>
+</body>
+</html>
