@@ -262,7 +262,7 @@
                 const controls = new THREE.OrbitControls(camera, renderer.domElement);
                 const loader = new THREE.GLTFLoader();
 
-                const cubeNames = [
+                const cubeValues = [
                     'Cube021', 'Cube022', 'Cube023',
                     'Cube027', 'Cube028', 'Cube029',
                     'Cube033', 'Cube034', 'Cube035'
@@ -276,7 +276,7 @@
                         const model = gltf.scene;
                         model.position.set(-1.5, 0, 0);
                         scene.add(model);
-                        cubes = cubeNames.map(name => model.getObjectByName(name)).filter(cube => cube !== undefined);
+                        cubes = cubeValues.map(name => model.getObjectByName(name)).filter(cube => cube !== undefined);
                         controls.update();
                     },
                     undefined,
