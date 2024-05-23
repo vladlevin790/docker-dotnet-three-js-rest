@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("docker-dotnet-three-js")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f15cc38a392c8e02737cc3106c34b3a1cc0c8249")]
 [assembly: System.Reflection.AssemblyProductAttribute("docker-dotnet-three-js")]
 [assembly: System.Reflection.AssemblyTitleAttribute("docker-dotnet-three-js")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

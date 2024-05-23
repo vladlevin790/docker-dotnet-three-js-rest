@@ -89,6 +89,16 @@
           <div id="canvas-container"></div>
         </div>
     </div>
+
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+          <span class="close" onclick="closeEditModal()">&times;</span>
+          <h2>Edit File</h2>
+          <input type="file" id="editFileInput">
+          <textarea id="editDescriptionInput" placeholder="Enter new description"></textarea>
+          <button onclick="saveChanges()">Save Changes</button>
+        </div>
+    </div>
       
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three/examples/js/loaders/GLTFLoader.js"></script>
@@ -157,7 +167,7 @@
                     <p><strong>File Path:</strong> <a href="${file.file_path}" target="_blank">${file.file_path}</a></p>
                     <p><strong>Description:</strong> ${file.description}</p>
                     <button onclick="deleteFile(${file.id})">Delete</button>
-                    <button onclick="openModal(${file.id}, '${file.description}')">Edit</button>
+                    <button onclick="openEditModal(${file.id}, '${file.description}')">Edit</button>
                     <button onclick="viewModel('${file.id}')">View 3D Model</button>
                 `;
                 fileList.appendChild(fileItem);
@@ -181,10 +191,10 @@
             }
         }
 
-        function openModal(id, currentDescription) {
+        function openEditModal(id, currentDescription) {
             currentFileId = id;
-            const modal = document.getElementById('myModal');
-            modal.style.display = 'block';
+            const editModal = document.getElementById('editModal');
+            editModal.style.display = 'block';
 
             const editFileInput = document.getElementById('editFileInput');
             const editDescriptionInput = document.getElementById('editDescriptionInput');
@@ -215,7 +225,7 @@
                 }
 
                 alert('File edited successfully');
-                closeModal();
+                closeEditModal();
                 fetchFiles();
             } catch (error) {
                 alert(error.message);
@@ -223,8 +233,13 @@
         }
 
         function closeModal() {
-            const modal = document.getElementById('editModal');
+            const modal = document.getElementById('myModal');
             modal.style.display = 'none';
+        }
+
+        function closeEditModal() {
+            const editModal = document.getElementById('editModal');
+            editModal.style.display = 'none';
         }
 
         async function viewModel(id) {
@@ -245,7 +260,6 @@
                 modalContainer.innerHTML = '';
                 modalContainer.appendChild(renderer.domElement);
                 const controls = new THREE.OrbitControls(camera, renderer.domElement);
-
                 const loader = new THREE.GLTFLoader();
                 loader.load(
                     objectURL,
@@ -280,16 +294,6 @@
             } catch (error) {
                 alert(error.message);
             }
-        }
-
-        function openModal() {
-            var modal = document.getElementById('myModal');
-            modal.style.display = 'block';
-        }
-
-        function closeModal() {
-            var modal = document.getElementById('myModal');
-            modal.style.display = 'none';
         }
 
         document.addEventListener('DOMContentLoaded', fetchFiles);
